@@ -14,12 +14,27 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
           photo: reader.result
         };
   
-        saveEntry(entry);
-        displayEntries();
+        getCoordinates(location).then(coords => {
+          entry.coords = coords;
+          saveEntry(entry);
+          displayEntries();
+          addMarker(coords);
+        });
       };
       reader.readAsDataURL(photo);
     }
   });
+  
+  function getCoordinates(location) {
+    return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.length > 0) {
+          return [data[0].lat, data[0].lon];
+        }
+        return [0, 0]; // Default coordinates if location not found
+      });
+  }
   
   function saveEntry(entry) {
     const entries = getEntries();
@@ -37,7 +52,7 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
     const entriesDiv = document.getElementById('entries');
     entriesDiv.innerHTML = '';
   
-    entries.forEach(entry => {
+    entries.forEach((entry, index) => {
       const entryDiv = document.createElement('div');
       entryDiv.classList.add('entry');
       
@@ -53,16 +68,48 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
       desc.textContent = `Description: ${entry.description}`;
       entryDiv.appendChild(desc);
       
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.onclick = () => deleteEntry(index);
+      entryDiv.appendChild(deleteButton);
+      
       entriesDiv.appendChild(entryDiv);
     });
+  }
+  
+  function deleteEntry(index) {
+    const entries = getEntries();
+    entries.splice(index, 1);
+    localStorage.setItem('entries', JSON.stringify(entries));
+    displayEntries();
+    updateMarkers();
   }
   
   displayEntries();
   
   // Initialize map
-  const map = L.map('map').setView([51.505, -0.09], 2);
+  const map = L.map('map').setView([0, 0], 2);
   
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
+  
+  const markers = [];
+  
+  function addMarker(coords) {
+    const marker = L.marker(coords).addTo(map);
+    markers.push(marker);
+  }
+  
+  function updateMarkers() {
+    markers.forEach(marker => map.removeLayer(marker));
+    markers.length = 0;
+    
+    const entries = getEntries();
+    entries.forEach(entry => {
+      addMarker(entry.coords);
+    });
+  }
+  
+  updateMarkers();
   

@@ -55,10 +55,30 @@ body {
     border: 1px solid #ccc;
     padding: 10px;
     margin-bottom: 10px;
+    position: relative;
   }
   
   .entry img {
     max-width: 100%;
+  }
+  
+  .entry p {
+    margin: 5px 0;
+  }
+  
+  .entry button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .entry button:hover {
+    background: darkred;
   }
   
   .map {
