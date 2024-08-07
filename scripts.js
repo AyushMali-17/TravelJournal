@@ -1,94 +1,19 @@
 // Simple Authentication
 document.getElementById('login').addEventListener('click', login);
-document.getElementById('register').addEventListener('click', register);
 document.getElementById('logout').addEventListener('click', logout);
-document.getElementById('editProfile').addEventListener('click', editProfile);
-document.getElementById('searchButton').addEventListener('click', searchEntries);
-document.getElementById('filterButton').addEventListener('click', filterEntries);
-document.getElementById('commentForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const commentText = document.getElementById('commentText').value;
-  const username = localStorage.getItem('username');
-  if (commentText) {
-    const comment = {
-      text: commentText,
-      username,
-      id: Date.now()
-    };
-    saveComment(comment);
-  }
-});
-document.getElementById('journalForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  const location = document.getElementById('location').value;
-  const description = document.getElementById('description').value;
-  const photo = document.getElementById('photo').files[0];
-  const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
-  const username = localStorage.getItem('username');
-
-  if (photo) {
-    const reader = new FileReader();
-    reader.onloadend = function() {
-      const entry = {
-        location,
-        description,
-        photo: reader.result,
-        tags,
-        username,
-        id: Date.now()
-      };
-
-      getCoordinates(location).then(coords => {
-        entry.coords = coords;
-        saveEntry(entry);
-      });
-    };
-    reader.readAsDataURL(photo);
-  } else {
-    const entry = {
-      location,
-      description,
-      tags,
-      username,
-      id: Date.now()
-    };
-
-    getCoordinates(location).then(coords => {
-      entry.coords = coords;
-      saveEntry(entry);
-    });
-  }
-});
 
 function login() {
   const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  if (username && password) {
-    // Dummy authentication
+  if (username) {
     localStorage.setItem('username', username);
     document.getElementById('auth').style.display = 'none';
     document.getElementById('journalForm').style.display = 'block';
     document.getElementById('logout').style.display = 'block';
-    document.getElementById('profile').style.display = 'block';
     document.getElementById('commentForm').style.display = 'block';
-    document.getElementById('profileName').textContent = `Name: ${username}`;
     loadEntries();
     loadComments();
   } else {
-    alert('Please enter username and password.');
-  }
-}
-
-function register() {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  if (username && password) {
-    // Dummy registration
-    localStorage.setItem('username', username);
-    alert('Registration successful! You can now log in.');
-  } else {
-    alert('Please enter username and password.');
+    alert('Please enter a username.');
   }
 }
 
@@ -97,7 +22,6 @@ function logout() {
   document.getElementById('auth').style.display = 'flex';
   document.getElementById('journalForm').style.display = 'none';
   document.getElementById('logout').style.display = 'none';
-  document.getElementById('profile').style.display = 'none';
   document.getElementById('commentForm').style.display = 'none';
   document.getElementById('entries').innerHTML = '';
   document.getElementById('comments').innerHTML = '';
@@ -109,6 +33,36 @@ function logout() {
 }
 
 // Journal Entries
+document.getElementById('journalForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const location = document.getElementById('location').value;
+  const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
+  const description = document.getElementById('description').value;
+  const photo = document.getElementById('photo').files[0];
+  const username = localStorage.getItem('username');
+
+  if (photo) {
+    const reader = new FileReader();
+    reader.onloadend = function() {
+      const entry = {
+        location,
+        tags,
+        description,
+        photo: reader.result,
+        username,
+        id: Date.now()
+      };
+
+      getCoordinates(location).then(coords => {
+        entry.coords = coords;
+        saveEntry(entry);
+      });
+    };
+    reader.readAsDataURL(photo);
+  }
+});
+
 function getCoordinates(location) {
   return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`)
     .then(response => response.json())
@@ -122,8 +76,12 @@ function getCoordinates(location) {
 
 function saveEntry(entry) {
   let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(e => e.id !== entry.id); // Remove old entry if editing
-  entries.push(entry);
+  const existingEntryIndex = entries.findIndex(e => e.id === entry.id);
+  if (existingEntryIndex > -1) {
+    entries[existingEntryIndex] = entry;
+  } else {
+    entries.push(entry);
+  }
   localStorage.setItem('entries', JSON.stringify(entries));
   loadEntries();
 }
@@ -146,7 +104,7 @@ function displayEntry(entry) {
 
   const entryDiv = document.createElement('div');
   entryDiv.classList.add('entry');
-  entryDiv.dataset.id = entry.id;
+  entryDiv.setAttribute('data-id', entry.id);
 
   const img = document.createElement('img');
   img.src = entry.photo;
@@ -176,45 +134,14 @@ function displayEntry(entry) {
   const deleteButton = document.createElement('button');
   deleteButton.textContent = 'Delete';
   deleteButton.addEventListener('click', () => {
-    if (confirm('Are you sure you want to delete this entry?')) {
+        if (confirm('Are you sure you want to delete this entry?')) {
       deleteEntry(entry.id);
     }
   });
   editButtons.appendChild(deleteButton);
 
   entryDiv.appendChild(editButtons);
-
   entriesDiv.appendChild(entryDiv);
-}
-
-function editEntry(id) {
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const entry = entries.find(entry => entry.id === id);
-
-  if (entry) {
-    document.getElementById('location').value = entry.location;
-    document.getElementById('tags').value = entry.tags.join(', ');
-    document.getElementById('description').value = entry.description;
-    // Clear previous photo selection
-    document.getElementById('photo').value = '';
-
-    // Remove existing photo if any
-    document.querySelector('#entries .entry[data-id="' + id + '"] img').remove();
-
-    document.getElementById('journalForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const updatedEntry = {
-        location: document.getElementById('location').value,
-        tags: document.getElementById('tags').value.split(',').map(tag => tag.trim()),
-        description: document.getElementById('description').value,
-        id
-      };
-      getCoordinates(updatedEntry.location).then(coords => {
-        updatedEntry.coords = coords;
-        saveEntry(updatedEntry);
-      });
-    });
-  }
 }
 
 function deleteEntry(id) {
@@ -224,16 +151,112 @@ function deleteEntry(id) {
   loadEntries();
 }
 
-function addMarker(coords) {
-  const marker = L.marker([coords[0], coords[1]]).addTo(map);
+function editEntry(id) {
+  let entries = JSON.parse(localStorage.getItem('entries')) || [];
+  const entryToEdit = entries.find(entry => entry.id === id);
+  if (entryToEdit) {
+    document.getElementById('location').value = entryToEdit.location;
+    document.getElementById('tags').value = entryToEdit.tags.join(', ');
+    document.getElementById('description').value = entryToEdit.description;
+    document.getElementById('photo').value = ''; // Clear file input
+    document.getElementById('journalForm').onsubmit = function(e) {
+      e.preventDefault();
+      updateEntry(id);
+    };
+  }
 }
 
-const map = L.map('map').setView([0, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-}).addTo(map);
+function updateEntry(id) {
+  const location = document.getElementById('location').value;
+  const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
+  const description = document.getElementById('description').value;
+  const photo = document.getElementById('photo').files[0];
+  const username = localStorage.getItem('username');
 
-// Comments
+  const entry = {
+    location,
+    tags,
+    description,
+    photo: photo ? URL.createObjectURL(photo) : '',
+    username,
+    id
+  };
+
+  getCoordinates(location).then(coords => {
+    entry.coords = coords;
+    saveEntry(entry);
+  });
+}
+
+document.getElementById('search').addEventListener('click', () => {
+  const searchLocation = document.getElementById('searchLocation').value;
+  const searchTags = document.getElementById('searchTags').value.split(',').map(tag => tag.trim());
+  filterEntries(searchLocation, searchTags);
+});
+
+function filterEntries(location, tags) {
+  const entriesDiv = document.getElementById('entries');
+  entriesDiv.innerHTML = '';
+  const username = localStorage.getItem('username');
+  let entries = JSON.parse(localStorage.getItem('entries')) || [];
+  entries = entries.filter(entry => entry.username === username);
+
+  if (location) {
+    entries = entries.filter(entry => entry.location.toLowerCase().includes(location.toLowerCase()));
+  }
+  
+  if (tags.length > 0) {
+    entries = entries.filter(entry => tags.every(tag => entry.tags.includes(tag)));
+  }
+
+  entries.forEach(entry => {
+    displayEntry(entry);
+    addMarker(entry.coords);
+  });
+}
+
+function loadComments() {
+  const commentsDiv = document.getElementById('comments');
+  commentsDiv.innerHTML = '';
+  const comments = JSON.parse(localStorage.getItem('comments')) || [];
+  comments.forEach(comment => {
+    const commentDiv = document.createElement('div');
+    commentDiv.classList.add('comment');
+    
+    const text = document.createElement('p');
+    text.textContent = comment.text;
+    commentDiv.appendChild(text);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete this comment?')) {
+        deleteComment(comment.id);
+      }
+    });
+    commentDiv.appendChild(deleteButton);
+
+    commentsDiv.appendChild(commentDiv);
+  });
+}
+
+document.getElementById('commentForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const commentText = document.getElementById('commentText').value;
+  const username = localStorage.getItem('username');
+
+  if (commentText) {
+    const comment = {
+      text: commentText,
+      username,
+      id: Date.now()
+    };
+
+    saveComment(comment);
+  }
+});
+
 function saveComment(comment) {
   let comments = JSON.parse(localStorage.getItem('comments')) || [];
   comments.push(comment);
@@ -241,71 +264,34 @@ function saveComment(comment) {
   loadComments();
 }
 
-function loadComments() {
-  const commentsDiv = document.getElementById('comments');
-  commentsDiv.innerHTML = '';
+function deleteComment(id) {
   let comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments.forEach(comment => {
-    displayComment(comment);
-  });
+  comments = comments.filter(comment => comment.id !== id);
+  localStorage.setItem('comments', JSON.stringify(comments));
+  loadComments();
 }
 
-function displayComment(comment) {
-  const commentsDiv = document.getElementById('comments');
-  const commentDiv = document.createElement('div');
-  commentDiv.classList.add('comment');
-  commentDiv.textContent = `${comment.username}: ${comment.text}`;
-  
-  // Add reply functionality if needed
-  const replyButton = document.createElement('button');
-  replyButton.textContent = 'Reply';
-  replyButton.addEventListener('click', () => replyToComment(comment.id));
-  commentDiv.appendChild(replyButton);
-  
-  commentsDiv.appendChild(commentDiv);
+// Initialize map
+const map = L.map('map').setView([0, 0], 2);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+function addMarker(coords) {
+  const marker = L.marker(coords).addTo(map);
 }
 
-function replyToComment(id) {
-  // Implement reply functionality if needed
-}
-
-// Search and Filter Entries
-function searchEntries() {
-  const searchLocation = document.getElementById('searchLocation').value.toLowerCase();
-  const entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const filteredEntries = entries.filter(entry => entry.location.toLowerCase().includes(searchLocation));
-  displayEntries(filteredEntries);
-}
-
-function filterEntries() {
-  const searchTags = document.getElementById('searchTags').value.toLowerCase().split(',').map(tag => tag.trim());
-  const entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const filteredEntries = entries.filter(entry => 
-    searchTags.every(tag => entry.tags.map(t => t.toLowerCase()).includes(tag))
-  );
-  displayEntries(filteredEntries);
-}
-
-function displayEntries(entries) {
-  const entriesDiv = document.getElementById('entries');
-  entriesDiv.innerHTML = '';
-  entries.forEach(entry => {
-    displayEntry(entry);
-    addMarker(entry.coords);
-  });
-}
-
-// Initial load
-document.addEventListener('DOMContentLoaded', () => {
+// Load entries and comments on page load if user is logged in
+document.addEventListener('DOMContentLoaded', function() {
   const username = localStorage.getItem('username');
   if (username) {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('journalForm').style.display = 'block';
     document.getElementById('logout').style.display = 'block';
-    document.getElementById('profile').style.display = 'block';
     document.getElementById('commentForm').style.display = 'block';
-    document.getElementById('profileName').textContent = `Name: ${username}`;
     loadEntries();
     loadComments();
   }
 });
+
