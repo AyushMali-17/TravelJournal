@@ -122,3 +122,18 @@ body {
     margin-bottom: 10px;
   }
   
+  @media (max-width: 600px) {
+    .container {
+      width: 100%;
+      padding: 10px;
+    }
+  
+    input, textarea, button {
+      width: 100%;
+    }
+  
+    .entry img {
+      max-width: 100%;
+    }
+  }
+  

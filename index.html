@@ -11,12 +11,17 @@
   <div class="container">
     <h1>Travel Journal</h1>
     <div id="auth">
-      <input type="text" id="username" placeholder="Username" required>
-      <button id="login">Login</button>
+      <div id="loginSection">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button id="login">Login</button>
+        <button id="register">Register</button>
+      </div>
       <button id="logout" style="display:none;">Logout</button>
     </div>
     <form id="journalForm" style="display:none;">
       <input type="text" id="location" placeholder="Location" required>
+      <input type="text" id="tags" placeholder="Tags (comma separated)">
       <textarea id="description" placeholder="Description" required></textarea>
       <input type="file" id="photo" accept="image/*" required>
       <button type="submit">Submit</button>
@@ -32,6 +37,8 @@
     </div>
     <input type="text" id="searchLocation" placeholder="Search by location">
     <button id="searchButton">Search</button>
+    <input type="text" id="searchTags" placeholder="Filter by tags">
+    <button id="filterButton">Filter</button>
     <form id="commentForm" style="display:none;">
       <textarea id="commentText" placeholder="Add a comment" required></textarea>
       <button type="submit">Post Comment</button>

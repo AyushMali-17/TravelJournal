@@ -1,8 +1,10 @@
 // Simple Authentication
 document.getElementById('login').addEventListener('click', login);
+document.getElementById('register').addEventListener('click', register);
 document.getElementById('logout').addEventListener('click', logout);
 document.getElementById('editProfile').addEventListener('click', editProfile);
 document.getElementById('searchButton').addEventListener('click', searchEntries);
+document.getElementById('filterButton').addEventListener('click', filterEntries);
 document.getElementById('commentForm').addEventListener('submit', function(e) {
   e.preventDefault();
   const commentText = document.getElementById('commentText').value;
@@ -22,6 +24,7 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
   const location = document.getElementById('location').value;
   const description = document.getElementById('description').value;
   const photo = document.getElementById('photo').files[0];
+  const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
   const username = localStorage.getItem('username');
 
   if (photo) {
@@ -31,6 +34,7 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
         location,
         description,
         photo: reader.result,
+        tags,
         username,
         id: Date.now()
       };
@@ -46,11 +50,9 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
 
 function login() {
   const username = document.getElementById('username').value;
-  if (username) {
-    if (username.length < 3) {
-      alert('Username must be at least 3 characters long.');
-      return;
-    }
+  const password = document.getElementById('password').value;
+  if (username && password) {
+    // Dummy authentication
     localStorage.setItem('username', username);
     document.getElementById('auth').style.display = 'none';
     document.getElementById('journalForm').style.display = 'block';
@@ -61,7 +63,19 @@ function login() {
     loadEntries();
     loadComments();
   } else {
-    alert('Please enter a username.');
+    alert('Please enter username and password.');
+  }
+}
+
+function register() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  if (username && password) {
+    // Dummy registration
+    localStorage.setItem('username', username);
+    alert('Registration successful! You can now log in.');
+  } else {
+    alert('Please enter username and password.');
   }
 }
 
@@ -127,6 +141,10 @@ function displayEntry(entry) {
   loc.textContent = `Location: ${entry.location}`;
   entryDiv.appendChild(loc);
 
+  const tags = document.createElement('p');
+  tags.textContent = `Tags: ${entry.tags.join(', ')}`;
+  entryDiv.appendChild(tags);
+
   const desc = document.createElement('p');
   desc.textContent = `Description: ${entry.description}`;
   entryDiv.appendChild(desc);
@@ -151,7 +169,7 @@ function displayEntry(entry) {
 }
 
 function editEntry(id) {
-  // Implement edit functionality if needed
+  // Implement edit functionality
 }
 
 function deleteEntry(id) {
@@ -192,7 +210,18 @@ function displayComment(comment) {
   const commentDiv = document.createElement('div');
   commentDiv.classList.add('comment');
   commentDiv.textContent = `${comment.username}: ${comment.text}`;
+  
+  // Add reply functionality if needed
+  const replyButton = document.createElement('button');
+  replyButton.textContent = 'Reply';
+  replyButton.addEventListener('click', () => replyToComment(comment.id));
+  commentDiv.appendChild(replyButton);
+  
   commentsDiv.appendChild(commentDiv);
+}
+
+function replyToComment(id) {
+  // Implement reply functionality if needed
 }
 
 // Search and Filter Entries
@@ -200,6 +229,15 @@ function searchEntries() {
   const searchLocation = document.getElementById('searchLocation').value.toLowerCase();
   const entries = JSON.parse(localStorage.getItem('entries')) || [];
   const filteredEntries = entries.filter(entry => entry.location.toLowerCase().includes(searchLocation));
+  displayEntries(filteredEntries);
+}
+
+function filterEntries() {
+  const searchTags = document.getElementById('searchTags').value.toLowerCase().split(',').map(tag => tag.trim());
+  const entries = JSON.parse(localStorage.getItem('entries')) || [];
+  const filteredEntries = entries.filter(entry => 
+    searchTags.every(tag => entry.tags.map(t => t.toLowerCase()).includes(tag))
+  );
   displayEntries(filteredEntries);
 }
 
