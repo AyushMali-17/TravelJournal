@@ -1,430 +1,247 @@
-// Simple Authentication
-document.getElementById('login').addEventListener('click', login);
-document.getElementById('logout').addEventListener('click', logout);
 
-function login() {
-  const username = document.getElementById('username').value;
-  if (username) {
-    localStorage.setItem('username', username);
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'flex';
-    document.getElementById('logout').style.display = 'block';
-    document.getElementById('commentSection').style.display = 'block';
+let currentUser = null;
+let map = null;
+
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const authSection = document.getElementById('authSection');
+const journalSection = document.getElementById('journalSection');
+const commentSection = document.getElementById('commentSection');
+const authForm = document.getElementById('authForm');
+const journalForm = document.getElementById('journalForm');
+const searchBtn = document.getElementById('searchBtn');
+const entriesDiv = document.getElementById('entries');
+const commentForm = document.getElementById('commentForm');
+const commentsDiv = document.getElementById('comments');
+const themeToggle = document.getElementById('themeToggle');
+
+// Event Listeners
+loginBtn.addEventListener('click', showAuthForm);
+logoutBtn.addEventListener('click', logout);
+authForm.addEventListener('submit', handleAuth);
+journalForm.addEventListener('submit', handleJournalSubmit);
+searchBtn.addEventListener('click', handleSearch);
+commentForm.addEventListener('submit', handleCommentSubmit);
+themeToggle.addEventListener('click', toggleTheme);
+
+// Initialize the application
+function init() {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        updateUIOnLogin();
+    }
+    initMap();
     loadEntries();
     loadComments();
-  } else {
-    alert('Please enter a username.');
-  }
+    setInitialTheme();
+}
+
+// Theme functions
+function setInitialTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('theme', 'dark');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    } else {
+        localStorage.setItem('theme', 'light');
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    }
+}
+
+// Authentication functions
+function showAuthForm() {
+    authSection.style.display = 'block';
+    loginBtn.style.display = 'none';
+}
+
+function handleAuth(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    // In a real app, you'd hash the password and verify against a server
+    currentUser = { username, password };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    updateUIOnLogin();
+}
+
+function updateUIOnLogin() {
+    authSection.style.display = 'none';
+    journalSection.style.display = 'block';
+    commentSection.style.display = 'block';
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    loadEntries();
 }
 
 function logout() {
-  localStorage.removeItem('username');
-  document.getElementById('auth').style.display = 'flex';
-  document.getElementById('journalForm').style.display = 'none';
-  document.getElementById('logout').style.display = 'none';
-  document.getElementById('entries').innerHTML = '';
-  document.getElementById('comments').innerHTML = '';
-  map.eachLayer(layer => {
-    if (layer instanceof L.Marker) {
-      map.removeLayer(layer);
-    }
-  });
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    authSection.style.display = 'block';
+    journalSection.style.display = 'none';
+    commentSection.style.display = 'none';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    entriesDiv.innerHTML = '';
+    commentsDiv.innerHTML = '';
 }
 
-// Journal Entries
-document.getElementById('journalForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  updateEntry(Date.now());
-});
+// Journal functions
+function handleJournalSubmit(e) {
+    e.preventDefault();
+    const location = document.getElementById('location').value;
+    const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
+    const description = document.getElementById('description').value;
+    const photoInput = document.getElementById('photo');
+    const photo = photoInput.files[0];
 
-function updateEntry(id) {
-  const location = document.getElementById('location').value;
-  const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
-  const description = document.getElementById('description').value;
-  const photo = document.getElementById('photo').files[0];
-  const username = localStorage.getItem('username');
-
-  const entry = {
-    location,
-    tags,
-    description,
-    photo: photo ? URL.createObjectURL(photo) : '',
-    username,
-    id
-  };
-
-  getCoordinates(location).then(coords => {
-    entry.coords = coords;
-    saveEntry(entry);
-  });
-}
-
-document.getElementById('search').addEventListener('click', () => {
-  const searchLocation = document.getElementById('searchLocation').value;
-  const searchTags = document.getElementById('searchTags').value.split(',').map(tag => tag.trim());
-  filterEntries(searchLocation, searchTags);
-});
-
-function filterEntries(location, tags) {
-  const entriesDiv = document.getElementById('entries');
-  entriesDiv.innerHTML = '';
-  const username = localStorage.getItem('username');
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry.username === username);
-
-  if (location) {
-    entries = entries.filter(entry => entry.location.toLowerCase().includes(location.toLowerCase()));
-  }
-  
-  if (tags.length > 0) {
-    entries = entries.filter(entry => tags.every(tag => entry.tags.includes(tag)));
-  }
-
-  entries.forEach(entry => {
-    displayEntry(entry);
-    if (entry.coords) {
-      addMarker(entry.coords);
-    }
-  });
-}
-
-function loadComments() {
-  const commentsDiv = document.getElementById('comments');
-  commentsDiv.innerHTML = '';
-  const comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments.forEach(comment => {
-    const commentDiv = document.createElement('div');
-    commentDiv.classList.add('comment');
-    
-    const text = document.createElement('p');
-    text.textContent = comment.text;
-    commentDiv.appendChild(text);
-    
-    const user = document.createElement('p');
-    user.textContent = `User: ${comment.username}`;
-    commentDiv.appendChild(user);
-    
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
-    deleteButton.classList.add('delete-button');
-    deleteButton.addEventListener('click', () => {
-      if (confirm('Are you sure you want to delete this comment?')) {
-        deleteComment(comment.id);
-      }
-    });
-    commentDiv.appendChild(deleteButton);
-    
-    commentsDiv.appendChild(commentDiv);
-  });
-}
-
-document.getElementById('commentForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  const commentText = document.getElementById('commentText').value;
-  const username = localStorage.getItem('username');
-
-  if (commentText) {
-    const comment = {
-      text: commentText,
-      username,
-      id: Date.now()
+    const entry = {
+        id: Date.now(),
+        location,
+        tags,
+        description,
+        photo: photo ? URL.createObjectURL(photo) : null,
+        username: currentUser.username
     };
 
-    saveComment(comment);
-  }
-});
-
-function saveComment(comment) {
-  let comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments.push(comment);
-  localStorage.setItem('comments', JSON.stringify(comments));
-  loadComments();
-}
-
-function deleteComment(id) {
-  let comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments = comments.filter(comment => comment.id !== id);
-  localStorage.setItem('comments', JSON.stringify(comments));
-  loadComments();
-}
-
-// Initialize map
-const map = L.map('map').setView([0, 0], 2);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-
-function addMarker(coords) {
-  const marker = L.marker(coords).addTo(map);
-  marker.bindPopup(`<b>${coords[0]}, ${coords[1]}</b>`).openPopup();
-}
-
-// Example function to demonstrate map animation
-function animateMarker(coords) {
-  const marker = L.marker(coords).addTo(map);
-  marker.bindPopup(`<b>${coords[0]}, ${coords[1]}</b>`).openPopup();
-
-  // Add animation
-  marker.setOpacity(0.5);
-  marker.on('mouseover', () => {
-    marker.setOpacity(1);
-    marker.openPopup();
-  });
-  marker.on('mouseout', () => {
-    marker.setOpacity(0.5);
-    marker.closePopup();
-  });
-}
-
-function getCoordinates(location) {
-  return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.length > 0) {
-        return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-      }
-      return [0, 0]; // Default coordinates if location not found
-    });
+    saveEntry(entry);
+    journalForm.reset();
+    loadEntries();
 }
 
 function saveEntry(entry) {
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries.push(entry);
-  localStorage.setItem('entries', JSON.stringify(entries));
-  loadEntries();
+    let entries = JSON.parse(localStorage.getItem('entries')) || [];
+    entries.push(entry);
+    localStorage.setItem('entries', JSON.stringify(entries));
 }
 
 function loadEntries() {
-  const entriesDiv = document.getElementById('entries');
-  entriesDiv.innerHTML = '';
-  const username = localStorage.getItem('username');
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry.username === username);
-
-  entries.forEach(entry => {
-    displayEntry(entry);
-    if (entry.coords) {
-      animateMarker(entry.coords); // Use animateMarker for interactive effect
-    }
-  });
+    if (!currentUser) return;
+    const entries = JSON.parse(localStorage.getItem('entries')) || [];
+    entriesDiv.innerHTML = '';
+    entries.filter(entry => entry.username === currentUser.username).forEach(displayEntry);
 }
 
 function displayEntry(entry) {
-  const entriesDiv = document.getElementById('entries');
-
-  const entryDiv = document.createElement('div');
-  entryDiv.classList.add('entry');
-
-  const img = document.createElement('img');
-  img.src = entry.photo;
-  entryDiv.appendChild(img);
-
-  const loc = document.createElement('p');
-  loc.textContent = `Location: ${entry.location}`;
-  entryDiv.appendChild(loc);
-
-  const desc = document.createElement('p');
-  desc.textContent = `Description: ${entry.description}`;
-  entryDiv.appendChild(desc);
-
-  const tags = document.createElement('p');
-  tags.textContent = `Tags: ${entry.tags.join(', ')}`;
-  entryDiv.appendChild(tags);
-
-  const editButtons = document.createElement('div');
-  editButtons.classList.add('edit-buttons');
-
-  const editButton = document.createElement('button');
-  editButton.textContent = 'Edit';
-  editButton.onclick = () => editEntry(entry);
-  editButtons.appendChild(editButton);
-
-  const deleteButton = document.createElement('button');
-  deleteButton.textContent = 'Delete';
-  deleteButton.classList.add('delete-button');
-  deleteButton.onclick = () => deleteEntry(entry);
-  editButtons.appendChild(deleteButton);
-
-  entryDiv.appendChild(editButtons);
-
-  entriesDiv.appendChild(entryDiv);
+    const entryDiv = document.createElement('div');
+    entryDiv.className = 'entry';
+    entryDiv.innerHTML = `
+        <h3><i class="fas fa-map-marker-alt"></i> ${entry.location}</h3>
+        <p>${entry.description}</p>
+        <p><i class="fas fa-tags"></i> ${entry.tags.join(', ')}</p>
+        ${entry.photo ? `<img src="${entry.photo}" alt="Travel photo">` : ''}
+        <div class="entry-actions">
+            <button onclick="editEntry(${entry.id})"><i class="fas fa-edit"></i> Edit</button>
+            <button onclick="deleteEntry(${entry.id})"><i class="fas fa-trash-alt"></i> Delete</button>
+        </div>
+    `;
+    entriesDiv.appendChild(entryDiv);
+    if (map) {
+        addMarkerToMap(entry.location);
+    }
 }
 
-function deleteEntry(entryToDelete) {
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry.id !== entryToDelete.id);
-  localStorage.setItem('entries', JSON.stringify(entries));
-  loadEntries();
+function editEntry(id) {
+    const entries = JSON.parse(localStorage.getItem('entries')) || [];
+    const entry = entries.find(e => e.id === id);
+    if (entry) {
+        document.getElementById('location').value = entry.location;
+        document.getElementById('tags').value = entry.tags.join(', ');
+        document.getElementById('description').value = entry.description;
+        // Remove the old entry and add the updated one on form submit
+deleteEntry(id);
+    }
 }
 
-function editEntry(entryToEdit) {
-  const location = prompt('Update location:', entryToEdit.location);
-  const description = prompt('Update description:', entryToEdit.description);
-  const tags = prompt('Update tags (comma-separated):', entryToEdit.tags.join(', '));
-  if (location && description) {
+function deleteEntry(id) {
     let entries = JSON.parse(localStorage.getItem('entries')) || [];
-    const entryIndex = entries.findIndex(entry => entry.id === entryToEdit.id);
-    if (entryIndex > -1) {
-      entries[entryIndex].location = location;
-      entries[entryIndex].description = description
-            entries[entryIndex].tags = tags.split(',').map(tag => tag.trim());
-      localStorage.setItem('entries', JSON.stringify(entries));
-      loadEntries();
-    }
-  }
-}
-
-// Initialize map
-const map = L.map('map').setView([0, 0], 2);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-
-// Example function to demonstrate map animation
-function animateMarker(coords) {
-  const marker = L.marker(coords).addTo(map);
-  marker.bindPopup(`<b>${coords[0]}, ${coords[1]}</b>`).openPopup();
-
-  // Add animation
-  marker.setOpacity(0.5);
-  marker.on('mouseover', () => {
-    marker.setOpacity(1);
-    marker.openPopup();
-  });
-  marker.on('mouseout', () => {
-    marker.setOpacity(0.5);
-    marker.closePopup();
-  });
-}
-
-// Load entries on page load if user is logged in
-document.addEventListener('DOMContentLoaded', function() {
-  const username = localStorage.getItem('username');
-  if (username) {
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'flex';
-    document.getElementById('logout').style.display = 'block';
-    document.getElementById('commentSection').style.display = 'block';
+    entries = entries.filter(entry => entry.id !== id);
+    localStorage.setItem('entries', JSON.stringify(entries));
     loadEntries();
-    loadComments();
-  }
-});
-
-// Function to validate photo input before submission
-function validatePhoto(photo) {
-  return new Promise((resolve, reject) => {
-    if (photo && photo.size <= 5000000) { // 5MB limit
-      resolve();
-    } else {
-      reject('Photo size exceeds 5MB or is not selected.');
-    }
-  });
 }
 
-document.getElementById('journalForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  const photo = document.getElementById('photo').files[0];
-  
-  validatePhoto(photo).then(() => {
-    updateEntry(Date.now());
-  }).catch(error => {
-    alert(error);
-  });
-});
-
-// Search functionality with additional filters
-document.getElementById('search').addEventListener('click', () => {
-  const searchLocation = document.getElementById('searchLocation').value;
-  const searchTags = document.getElementById('searchTags').value.split(',').map(tag => tag.trim());
-  filterEntries(searchLocation, searchTags);
-});
-
-function filterEntries(location, tags) {
-  const entriesDiv = document.getElementById('entries');
-  entriesDiv.innerHTML = '';
-  const username = localStorage.getItem('username');
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry.username === username);
-
-  if (location) {
-    entries = entries.filter(entry => entry.location.toLowerCase().includes(location.toLowerCase()));
-  }
-  
-  if (tags.length > 0) {
-    entries = entries.filter(entry => tags.every(tag => entry.tags.includes(tag)));
-  }
-
-  entries.forEach(entry => {
-    displayEntry(entry);
-    if (entry.coords) {
-      animateMarker(entry.coords); // Use animateMarker for interactive effect
-    }
-  });
+function handleSearch() {
+    const searchLocation = document.getElementById('searchLocation').value.toLowerCase();
+    const searchTags = document.getElementById('searchTags').value.toLowerCase().split(',').map(tag => tag.trim());
+    const entries = JSON.parse(localStorage.getItem('entries')) || [];
+    const filteredEntries = entries.filter(entry => 
+        entry.username === currentUser.username &&
+        (searchLocation === '' || entry.location.toLowerCase().includes(searchLocation)) &&
+        (searchTags.length === 0 || searchTags.every(tag => entry.tags.map(t => t.toLowerCase()).includes(tag)))
+    );
+    entriesDiv.innerHTML = '';
+    filteredEntries.forEach(displayEntry);
 }
 
-// New feature: Add comments to entries
-document.getElementById('commentForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  const commentText = document.getElementById('commentText').value;
-  const username = localStorage.getItem('username');
+// Map functions
+function initMap() {
+    map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+}
 
-  if (commentText) {
+function addMarkerToMap(location) {
+    // In a real app, you'd use a geocoding service to get coordinates
+    const randomLat = Math.random() * 180 - 90;
+    const randomLng = Math.random() * 360 - 180;
+    L.marker([randomLat, randomLng]).addTo(map)
+        .bindPopup(location)
+        .openPopup();
+}
+
+// Comment functions
+function handleCommentSubmit(e) {
+    e.preventDefault();
+    const commentText = document.getElementById('commentText').value;
     const comment = {
-      text: commentText,
-      username,
-      id: Date.now()
+        id: Date.now(),
+        text: commentText,
+        username: currentUser.username
     };
-
     saveComment(comment);
-  }
-});
+    commentForm.reset();
+    loadComments();
+}
 
 function saveComment(comment) {
-  let comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments.push(comment);
-  localStorage.setItem('comments', JSON.stringify(comments));
-  loadComments();
+    let comments = JSON.parse(localStorage.getItem('comments')) || [];
+    comments.push(comment);
+    localStorage.setItem('comments', JSON.stringify(comments));
 }
 
 function loadComments() {
-  const commentsDiv = document.getElementById('comments');
-  commentsDiv.innerHTML = '';
-  const comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments.forEach(comment => {
+    const comments = JSON.parse(localStorage.getItem('comments')) || [];
+    commentsDiv.innerHTML = '';
+    comments.forEach(displayComment);
+}
+
+function displayComment(comment) {
     const commentDiv = document.createElement('div');
-    commentDiv.classList.add('comment');
-    
-    const text = document.createElement('p');
-    text.textContent = comment.text;
-    commentDiv.appendChild(text);
-    
-    const user = document.createElement('p');
-    user.textContent = `User: ${comment.username}`;
-    commentDiv.appendChild(user);
-    
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
-    deleteButton.classList.add('delete-button');
-    deleteButton.addEventListener('click', () => {
-      if (confirm('Are you sure you want to delete this comment?')) {
-        deleteComment(comment.id);
-      }
-    });
-    commentDiv.appendChild(deleteButton);
-    
+    commentDiv.className = 'comment';
+    commentDiv.innerHTML = `
+        <p>${comment.text}</p>
+        <p><i class="fas fa-user"></i> ${comment.username}</p>
+        ${currentUser && comment.username === currentUser.username ? 
+            `<button onclick="deleteComment(${comment.id})"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
+    `;
     commentsDiv.appendChild(commentDiv);
-  });
 }
 
 function deleteComment(id) {
-  let comments = JSON.parse(localStorage.getItem('comments')) || [];
-  comments = comments.filter(comment => comment.id !== id);
-  localStorage.setItem('comments', JSON.stringify(comments));
-  loadComments();
+    let comments = JSON.parse(localStorage.getItem('comments')) || [];
+    comments = comments.filter(comment => comment.id !== id);
+    localStorage.setItem('comments', JSON.stringify(comments));
+    loadComments();
 }
 
+// Initialize the app
+init();
