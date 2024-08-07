@@ -14,6 +14,7 @@ body {
     background: white;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: auto;
   }
   
   h1 {
@@ -44,6 +45,20 @@ body {
   
   button:hover {
     background: #0056b3;
+  }
+  
+  #entries {
+    margin-top: 20px;
+  }
+  
+  .entry {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .entry img {
+    max-width: 100%;
   }
   
   .map {
