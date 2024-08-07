@@ -1,4 +1,3 @@
-
 let currentUser = null;
 let map = null;
 
@@ -24,11 +23,10 @@ searchBtn.addEventListener('click', handleSearch);
 commentForm.addEventListener('submit', handleCommentSubmit);
 themeToggle.addEventListener('click', toggleTheme);
 
-// Initialize the application
 function init() {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-        currentUser = JSON.parse(storedUser);
+    const savedUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (savedUser) {
+        currentUser = savedUser;
         updateUIOnLogin();
     }
     initMap();
@@ -80,6 +78,7 @@ function updateUIOnLogin() {
     loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     loadEntries();
+    loadComments();
 }
 
 function logout() {
@@ -157,7 +156,7 @@ function editEntry(id) {
         document.getElementById('tags').value = entry.tags.join(', ');
         document.getElementById('description').value = entry.description;
         // Remove the old entry and add the updated one on form submit
-deleteEntry(id);
+        deleteEntry(id);
     }
 }
 
