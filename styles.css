@@ -1,117 +1,141 @@
 body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f4f4f4;
-  }
-  
-  .container {
-    width: 80%;
-    max-width: 800px;
-    background: white;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    overflow: auto;
-  }
-  
-  h1 {
-    text-align: center;
-    color: #333;
-  }
-  
-  #auth, form {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 20px;
-  }
-  
-  input, textarea {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  button {
-    padding: 10px;
-    background: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background: #0056b3;
-  }
-  
-  #entries {
-    margin-top: 20px;
-  }
-  
-  .entry {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-bottom: 10px;
-    position: relative;
-    background: #f9f9f9;
-    border-radius: 5px;
-  }
-  
-  .entry img {
-    max-width: 100%;
-    border-radius: 5px;
-  }
-  
-  .entry p {
-    margin: 5px 0;
-  }
-  
-  .entry .edit-buttons {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-  }
-  
-  .entry .edit-buttons button {
-    background: orange;
-    margin-right: 5px;
-  }
-  
-  .entry .edit-buttons button:hover {
-    background: darkorange;
-  }
-  
-  .entry .delete-button {
-    background: red;
-  }
-  
-  .entry .delete-button:hover {
-    background: darkred;
-  }
-  
-  .map {
-    height: 400px;
-    margin-top: 20px;
-    border: 1px solid #ccc;
-  }
-  
-  #comments {
-    margin-top: 20px;
-  }
-  
-  .comment {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-bottom: 10px;
-    background: #f9f9f9;
-    border-radius: 5px;
-  }
-  
-  .comment button {
-    margin-top: 10px;
-  }
-  
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #f4f4f4;
+}
+
+.container {
+  width: 80%;
+  max-width: 800px;
+  background: white;
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+#auth, form, #searchSection, #commentSection {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  transition: opacity 0.5s ease-in-out;
+}
+
+input, textarea {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  transition: border-color 0.3s ease;
+}
+
+input:focus, textarea:focus {
+  border-color: #007BFF;
+}
+
+button {
+  padding: 10px;
+  background: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+#entries {
+  margin-top: 20px;
+}
+
+.entry {
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 15px;
+  position: relative;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 1s ease;
+}
+
+.entry img {
+  max-width: 100%;
+  border-radius: 5px;
+}
+
+.entry p {
+  margin: 5px 0;
+}
+
+.entry .edit-buttons {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.entry .edit-buttons button {
+  background: orange;
+  margin-right: 5px;
+}
+
+.entry .edit-buttons button:hover {
+  background: darkorange;
+}
+
+.entry .delete-button {
+  background: red;
+}
+
+.entry .delete-button:hover {
+  background: darkred;
+}
+
+.map {
+  height: 400px;
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.comment {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.comment button {
+  background: #dc3545;
+}
+
+.comment button:hover {
+  background: #c82333;
+}

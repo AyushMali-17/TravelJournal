@@ -10,28 +10,32 @@
 <body>
   <div class="container">
     <h1>Travel Journal</h1>
-    <div id="auth">
+    <div id="auth" class="fade-in">
       <input type="text" id="username" placeholder="Username" required>
       <button id="login">Login</button>
       <button id="logout" style="display:none;">Logout</button>
     </div>
-    <form id="journalForm" style="display:none;">
+    <form id="journalForm" class="fade-in" style="display:none;">
       <input type="text" id="location" placeholder="Location" required>
-      <input type="text" id="tags" placeholder="Tags (comma separated)" required>
+      <input type="text" id="tags" placeholder="Tags (comma-separated)">
       <textarea id="description" placeholder="Description" required></textarea>
-      <input type="file" id="photo" accept="image/*" required>
+      <input type="file" id="photo" accept="image/*">
       <button type="submit">Submit</button>
     </form>
-    <input type="text" id="searchLocation" placeholder="Search Location">
-    <input type="text" id="searchTags" placeholder="Search Tags">
-    <button id="search">Search</button>
-    <div id="entries"></div>
+    <div id="searchSection" class="fade-in">
+      <input type="text" id="searchLocation" placeholder="Search Location">
+      <input type="text" id="searchTags" placeholder="Search Tags (comma-separated)">
+      <button id="search">Search</button>
+    </div>
+    <div id="entries" class="fade-in"></div>
     <div id="map" class="map"></div>
-    <form id="commentForm" style="display:none;">
-      <textarea id="commentText" placeholder="Write a comment..." required></textarea>
-      <button type="submit">Post Comment</button>
-    </form>
-    <div id="comments"></div>
+    <div id="commentSection" class="fade-in">
+      <form id="commentForm">
+        <textarea id="commentText" placeholder="Add a comment"></textarea>
+        <button type="submit">Submit Comment</button>
+      </form>
+      <div id="comments"></div>
+    </div>
   </div>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="scripts.js"></script>

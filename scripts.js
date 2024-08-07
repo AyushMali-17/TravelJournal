@@ -6,10 +6,9 @@ function login() {
   const username = document.getElementById('username').value;
   if (username) {
     localStorage.setItem('username', username);
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'block';
+    document.getElementById('auth').classList.remove('fade-in');
+    document.getElementById('journalForm').classList.add('fade-in');
     document.getElementById('logout').style.display = 'block';
-    document.getElementById('commentForm').style.display = 'block';
     loadEntries();
     loadComments();
   } else {
@@ -19,10 +18,9 @@ function login() {
 
 function logout() {
   localStorage.removeItem('username');
-  document.getElementById('auth').style.display = 'flex';
-  document.getElementById('journalForm').style.display = 'none';
+  document.getElementById('auth').classList.add('fade-in');
+  document.getElementById('journalForm').classList.remove('fade-in');
   document.getElementById('logout').style.display = 'none';
-  document.getElementById('commentForm').style.display = 'none';
   document.getElementById('entries').innerHTML = '';
   document.getElementById('comments').innerHTML = '';
   map.eachLayer((layer) => {
@@ -35,136 +33,8 @@ function logout() {
 // Journal Entries
 document.getElementById('journalForm').addEventListener('submit', function(e) {
   e.preventDefault();
-
-  const location = document.getElementById('location').value;
-  const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
-  const description = document.getElementById('description').value;
-  const photo = document.getElementById('photo').files[0];
-  const username = localStorage.getItem('username');
-
-  if (photo) {
-    const reader = new FileReader();
-    reader.onloadend = function() {
-      const entry = {
-        location,
-        tags,
-        description,
-        photo: reader.result,
-        username,
-        id: Date.now()
-      };
-
-      getCoordinates(location).then(coords => {
-        entry.coords = coords;
-        saveEntry(entry);
-      });
-    };
-    reader.readAsDataURL(photo);
-  }
+  updateEntry(Date.now());
 });
-
-function getCoordinates(location) {
-  return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.length > 0) {
-        return [data[0].lat, data[0].lon];
-      }
-      return [0, 0]; // Default coordinates if location not found
-    });
-}
-
-function saveEntry(entry) {
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const existingEntryIndex = entries.findIndex(e => e.id === entry.id);
-  if (existingEntryIndex > -1) {
-    entries[existingEntryIndex] = entry;
-  } else {
-    entries.push(entry);
-  }
-  localStorage.setItem('entries', JSON.stringify(entries));
-  loadEntries();
-}
-
-function loadEntries() {
-  const entriesDiv = document.getElementById('entries');
-  entriesDiv.innerHTML = '';
-  const username = localStorage.getItem('username');
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry.username === username);
-
-  entries.forEach(entry => {
-    displayEntry(entry);
-    addMarker(entry.coords);
-  });
-}
-
-function displayEntry(entry) {
-  const entriesDiv = document.getElementById('entries');
-
-  const entryDiv = document.createElement('div');
-  entryDiv.classList.add('entry');
-  entryDiv.setAttribute('data-id', entry.id);
-
-  const img = document.createElement('img');
-  img.src = entry.photo;
-  entryDiv.appendChild(img);
-
-  const loc = document.createElement('p');
-  loc.textContent = `Location: ${entry.location}`;
-  entryDiv.appendChild(loc);
-
-  const tags = document.createElement('p');
-  tags.textContent = `Tags: ${entry.tags.join(', ')}`;
-  entryDiv.appendChild(tags);
-
-  const desc = document.createElement('p');
-  desc.textContent = `Description: ${entry.description}`;
-  entryDiv.appendChild(desc);
-
-  // Edit and Delete buttons
-  const editButtons = document.createElement('div');
-  editButtons.classList.add('edit-buttons');
-
-  const editButton = document.createElement('button');
-  editButton.textContent = 'Edit';
-  editButton.addEventListener('click', () => editEntry(entry.id));
-  editButtons.appendChild(editButton);
-
-  const deleteButton = document.createElement('button');
-  deleteButton.textContent = 'Delete';
-  deleteButton.addEventListener('click', () => {
-        if (confirm('Are you sure you want to delete this entry?')) {
-      deleteEntry(entry.id);
-    }
-  });
-  editButtons.appendChild(deleteButton);
-
-  entryDiv.appendChild(editButtons);
-  entriesDiv.appendChild(entryDiv);
-}
-
-function deleteEntry(id) {
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry.id !== id);
-  localStorage.setItem('entries', JSON.stringify(entries));
-  loadEntries();
-}
-
-function editEntry(id) {
-  let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const entryToEdit = entries.find(entry => entry.id === id);
-  if (entryToEdit) {
-    document.getElementById('location').value = entryToEdit.location;
-    document.getElementById('tags').value = entryToEdit.tags.join(', ');
-    document.getElementById('description').value = entryToEdit.description;
-    document.getElementById('photo').value = ''; // Clear file input
-    document.getElementById('journalForm').onsubmit = function(e) {
-      e.preventDefault();
-      updateEntry(id);
-    };
-  }
-}
 
 function updateEntry(id) {
   const location = document.getElementById('location').value;
@@ -280,18 +150,18 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 function addMarker(coords) {
   const marker = L.marker(coords).addTo(map);
+  marker.bindPopup(`<b>${coords.lat}, ${coords.lng}</b>`).openPopup();
 }
 
 // Load entries and comments on page load if user is logged in
 document.addEventListener('DOMContentLoaded', function() {
   const username = localStorage.getItem('username');
   if (username) {
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'block';
+    document.getElementById('auth').classList.add('fade-in');
+    document.getElementById('journalForm').classList.add('fade-in');
     document.getElementById('logout').style.display = 'block';
-    document.getElementById('commentForm').style.display = 'block';
+    document.getElementById('commentForm').classList.add('fade-in');
     loadEntries();
     loadComments();
   }
 });
-
