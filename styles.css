@@ -22,9 +22,10 @@ body {
     color: #333;
   }
   
-  form {
+  #auth, form {
     display: flex;
     flex-direction: column;
+    margin-bottom: 20px;
   }
   
   input, textarea {
