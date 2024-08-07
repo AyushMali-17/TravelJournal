@@ -1,6 +1,8 @@
+// Global variables
 let currentUser = null;
 let map = null;
 
+// DOM Elements
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const authSection = document.getElementById('authSection');
@@ -23,10 +25,11 @@ searchBtn.addEventListener('click', handleSearch);
 commentForm.addEventListener('submit', handleCommentSubmit);
 themeToggle.addEventListener('click', toggleTheme);
 
+// Initialize the application
 function init() {
-    const savedUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (savedUser) {
-        currentUser = savedUser;
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
         updateUIOnLogin();
     }
     initMap();
@@ -78,7 +81,6 @@ function updateUIOnLogin() {
     loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     loadEntries();
-    loadComments();
 }
 
 function logout() {
@@ -156,7 +158,7 @@ function editEntry(id) {
         document.getElementById('tags').value = entry.tags.join(', ');
         document.getElementById('description').value = entry.description;
         // Remove the old entry and add the updated one on form submit
-        deleteEntry(id);
+deleteEntry(id);
     }
 }
 
