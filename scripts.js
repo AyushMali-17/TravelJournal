@@ -45,6 +45,19 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
       });
     };
     reader.readAsDataURL(photo);
+  } else {
+    const entry = {
+      location,
+      description,
+      tags,
+      username,
+      id: Date.now()
+    };
+
+    getCoordinates(location).then(coords => {
+      entry.coords = coords;
+      saveEntry(entry);
+    });
   }
 });
 
@@ -109,6 +122,7 @@ function getCoordinates(location) {
 
 function saveEntry(entry) {
   let entries = JSON.parse(localStorage.getItem('entries')) || [];
+  entries = entries.filter(e => e.id !== entry.id); // Remove old entry if editing
   entries.push(entry);
   localStorage.setItem('entries', JSON.stringify(entries));
   loadEntries();
@@ -132,6 +146,7 @@ function displayEntry(entry) {
 
   const entryDiv = document.createElement('div');
   entryDiv.classList.add('entry');
+  entryDiv.dataset.id = entry.id;
 
   const img = document.createElement('img');
   img.src = entry.photo;
@@ -149,6 +164,7 @@ function displayEntry(entry) {
   desc.textContent = `Description: ${entry.description}`;
   entryDiv.appendChild(desc);
 
+  // Edit and Delete buttons
   const editButtons = document.createElement('div');
   editButtons.classList.add('edit-buttons');
 
@@ -159,8 +175,11 @@ function displayEntry(entry) {
 
   const deleteButton = document.createElement('button');
   deleteButton.textContent = 'Delete';
-  deleteButton.classList.add('delete-button');
-  deleteButton.addEventListener('click', () => deleteEntry(entry.id));
+  deleteButton.addEventListener('click', () => {
+    if (confirm('Are you sure you want to delete this entry?')) {
+      deleteEntry(entry.id);
+    }
+  });
   editButtons.appendChild(deleteButton);
 
   entryDiv.appendChild(editButtons);
@@ -169,7 +188,33 @@ function displayEntry(entry) {
 }
 
 function editEntry(id) {
-  // Implement edit functionality
+  let entries = JSON.parse(localStorage.getItem('entries')) || [];
+  const entry = entries.find(entry => entry.id === id);
+
+  if (entry) {
+    document.getElementById('location').value = entry.location;
+    document.getElementById('tags').value = entry.tags.join(', ');
+    document.getElementById('description').value = entry.description;
+    // Clear previous photo selection
+    document.getElementById('photo').value = '';
+
+    // Remove existing photo if any
+    document.querySelector('#entries .entry[data-id="' + id + '"] img').remove();
+
+    document.getElementById('journalForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const updatedEntry = {
+        location: document.getElementById('location').value,
+        tags: document.getElementById('tags').value.split(',').map(tag => tag.trim()),
+        description: document.getElementById('description').value,
+        id
+      };
+      getCoordinates(updatedEntry.location).then(coords => {
+        updatedEntry.coords = coords;
+        saveEntry(updatedEntry);
+      });
+    });
+  }
 }
 
 function deleteEntry(id) {

@@ -137,3 +137,39 @@ body {
     }
   }
   
+  
+  .entry {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }
+  
+  .edit-buttons {
+    margin-top: 10px;
+  }
+  
+  .edit-buttons button {
+    margin-right: 5px;
+  }
+  
+  .map {
+    height: 400px;
+    width: 100%;
+  }
+  
+  @media (max-width: 600px) {
+    .container {
+      width: 100%;
+      padding: 10px;
+    }
+  
+    input, textarea, button {
+      width: 100%;
+    }
+  
+    .entry img {
+      max-width: 100%;
+    }
+  }
+  
