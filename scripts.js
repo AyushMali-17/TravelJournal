@@ -1,34 +1,21 @@
 // Simple Authentication
 document.getElementById('login').addEventListener('click', login);
 document.getElementById('logout').addEventListener('click', logout);
-
-function login() {
-  const username = document.getElementById('username').value;
-  if (username) {
-    localStorage.setItem('username', username);
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'block';
-    document.getElementById('logout').style.display = 'block';
-    loadEntries();
-  } else {
-    alert('Please enter a username.');
+document.getElementById('editProfile').addEventListener('click', editProfile);
+document.getElementById('searchButton').addEventListener('click', searchEntries);
+document.getElementById('commentForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const commentText = document.getElementById('commentText').value;
+  const username = localStorage.getItem('username');
+  if (commentText) {
+    const comment = {
+      text: commentText,
+      username,
+      id: Date.now()
+    };
+    saveComment(comment);
   }
-}
-
-function logout() {
-  localStorage.removeItem('username');
-  document.getElementById('auth').style.display = 'flex';
-  document.getElementById('journalForm').style.display = 'none';
-  document.getElementById('logout').style.display = 'none';
-  document.getElementById('entries').innerHTML = '';
-  map.eachLayer((layer) => {
-    if (layer instanceof L.Marker) {
-      map.removeLayer(layer);
-    }
-  });
-}
-
-// Journal Entries
+});
 document.getElementById('journalForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
@@ -44,7 +31,8 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
         location,
         description,
         photo: reader.result,
-        username
+        username,
+        id: Date.now()
       };
 
       getCoordinates(location).then(coords => {
@@ -56,6 +44,44 @@ document.getElementById('journalForm').addEventListener('submit', function(e) {
   }
 });
 
+function login() {
+  const username = document.getElementById('username').value;
+  if (username) {
+    if (username.length < 3) {
+      alert('Username must be at least 3 characters long.');
+      return;
+    }
+    localStorage.setItem('username', username);
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'block';
+    document.getElementById('logout').style.display = 'block';
+    document.getElementById('profile').style.display = 'block';
+    document.getElementById('commentForm').style.display = 'block';
+    document.getElementById('profileName').textContent = `Name: ${username}`;
+    loadEntries();
+    loadComments();
+  } else {
+    alert('Please enter a username.');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('username');
+  document.getElementById('auth').style.display = 'flex';
+  document.getElementById('journalForm').style.display = 'none';
+  document.getElementById('logout').style.display = 'none';
+  document.getElementById('profile').style.display = 'none';
+  document.getElementById('commentForm').style.display = 'none';
+  document.getElementById('entries').innerHTML = '';
+  document.getElementById('comments').innerHTML = '';
+  map.eachLayer((layer) => {
+    if (layer instanceof L.Marker) {
+      map.removeLayer(layer);
+    }
+  });
+}
+
+// Journal Entries
 function getCoordinates(location) {
   return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`)
     .then(response => response.json())
@@ -105,39 +131,98 @@ function displayEntry(entry) {
   desc.textContent = `Description: ${entry.description}`;
   entryDiv.appendChild(desc);
 
+  const editButtons = document.createElement('div');
+  editButtons.classList.add('edit-buttons');
+
+  const editButton = document.createElement('button');
+  editButton.textContent = 'Edit';
+  editButton.addEventListener('click', () => editEntry(entry.id));
+  editButtons.appendChild(editButton);
+
   const deleteButton = document.createElement('button');
   deleteButton.textContent = 'Delete';
-  deleteButton.onclick = () => deleteEntry(entry);
-  entryDiv.appendChild(deleteButton);
+  deleteButton.classList.add('delete-button');
+  deleteButton.addEventListener('click', () => deleteEntry(entry.id));
+  editButtons.appendChild(deleteButton);
+
+  entryDiv.appendChild(editButtons);
 
   entriesDiv.appendChild(entryDiv);
 }
 
-function deleteEntry(entryToDelete) {
+function editEntry(id) {
+  // Implement edit functionality if needed
+}
+
+function deleteEntry(id) {
   let entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries = entries.filter(entry => entry !== entryToDelete);
+  entries = entries.filter(entry => entry.id !== id);
   localStorage.setItem('entries', JSON.stringify(entries));
   loadEntries();
 }
 
-// Initialize map
-const map = L.map('map').setView([0, 0], 2);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-
 function addMarker(coords) {
-  const marker = L.marker(coords).addTo(map);
+  const marker = L.marker([coords[0], coords[1]]).addTo(map);
 }
 
-// Load entries on page load if user is logged in
-document.addEventListener('DOMContentLoaded', function() {
+const map = L.map('map').setView([0, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+}).addTo(map);
+
+// Comments
+function saveComment(comment) {
+  let comments = JSON.parse(localStorage.getItem('comments')) || [];
+  comments.push(comment);
+  localStorage.setItem('comments', JSON.stringify(comments));
+  loadComments();
+}
+
+function loadComments() {
+  const commentsDiv = document.getElementById('comments');
+  commentsDiv.innerHTML = '';
+  let comments = JSON.parse(localStorage.getItem('comments')) || [];
+  comments.forEach(comment => {
+    displayComment(comment);
+  });
+}
+
+function displayComment(comment) {
+  const commentsDiv = document.getElementById('comments');
+  const commentDiv = document.createElement('div');
+  commentDiv.classList.add('comment');
+  commentDiv.textContent = `${comment.username}: ${comment.text}`;
+  commentsDiv.appendChild(commentDiv);
+}
+
+// Search and Filter Entries
+function searchEntries() {
+  const searchLocation = document.getElementById('searchLocation').value.toLowerCase();
+  const entries = JSON.parse(localStorage.getItem('entries')) || [];
+  const filteredEntries = entries.filter(entry => entry.location.toLowerCase().includes(searchLocation));
+  displayEntries(filteredEntries);
+}
+
+function displayEntries(entries) {
+  const entriesDiv = document.getElementById('entries');
+  entriesDiv.innerHTML = '';
+  entries.forEach(entry => {
+    displayEntry(entry);
+    addMarker(entry.coords);
+  });
+}
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => {
   const username = localStorage.getItem('username');
   if (username) {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('journalForm').style.display = 'block';
     document.getElementById('logout').style.display = 'block';
+    document.getElementById('profile').style.display = 'block';
+    document.getElementById('commentForm').style.display = 'block';
+    document.getElementById('profileName').textContent = `Name: ${username}`;
     loadEntries();
+    loadComments();
   }
 });

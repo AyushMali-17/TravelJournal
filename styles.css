@@ -67,18 +67,26 @@ body {
     margin: 5px 0;
   }
   
-  .entry button {
+  .entry .edit-buttons {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: red;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
   }
   
-  .entry button:hover {
+  .entry .edit-buttons button {
+    background: orange;
+    margin-right: 5px;
+  }
+  
+  .entry .edit-buttons button:hover {
+    background: darkorange;
+  }
+  
+  .entry .delete-button {
+    background: red;
+  }
+  
+  .entry .delete-button:hover {
     background: darkred;
   }
   
@@ -86,5 +94,31 @@ body {
     height: 300px;
     margin-top: 20px;
     border: 1px solid #ccc;
+  }
+  
+  #profile {
+    margin-top: 20px;
+  }
+  
+  #profile p {
+    font-size: 18px;
+  }
+  
+  #commentForm textarea {
+    height: 80px;
+  }
+  
+  #comments {
+    margin-top: 20px;
+  }
+  
+  .comment {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  #searchLocation {
+    margin-bottom: 10px;
   }
   

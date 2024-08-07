@@ -23,6 +23,20 @@
     </form>
     <div id="entries"></div>
     <div id="map" class="map"></div>
+    
+    <!-- User Profile and Comments Section -->
+    <div id="profile" style="display:none;">
+      <h2>Profile</h2>
+      <p id="profileName"></p>
+      <button id="editProfile">Edit Profile</button>
+    </div>
+    <input type="text" id="searchLocation" placeholder="Search by location">
+    <button id="searchButton">Search</button>
+    <form id="commentForm" style="display:none;">
+      <textarea id="commentText" placeholder="Add a comment" required></textarea>
+      <button type="submit">Post Comment</button>
+    </form>
+    <div id="comments"></div>
   </div>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="scripts.js"></script>
