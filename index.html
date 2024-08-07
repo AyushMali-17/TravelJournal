@@ -11,10 +11,8 @@
   <div class="container">
     <h1>Travel Journal</h1>
     <div id="auth">
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="password" placeholder="Password" required>
+      <input type="text" id="username" placeholder="Username" required>
       <button id="login">Login</button>
-      <button id="register">Register</button>
       <button id="logout" style="display:none;">Logout</button>
     </div>
     <form id="journalForm" style="display:none;">
@@ -26,9 +24,6 @@
     <div id="entries"></div>
     <div id="map" class="map"></div>
   </div>
-  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="scripts.js"></script>
 </body>
